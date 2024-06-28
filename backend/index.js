@@ -2,6 +2,8 @@ const express=require('express');
 const bodyParser=require('body-parser')
 const mongoose= require('mongoose');
 const cors=require('cors');
+const WebSocket = require('ws');
+const wss = new WebSocket.Server({ port: 1291 });
 
 
 app=express()
@@ -105,6 +107,7 @@ app.get('/chats/with/:userp',(req,res)=>{
      .catch((err)=>{console.log(err)});
 })
 
+
 app.get('/with/:user1/:user2',(req,res)=>{
      const u1=req.params.user1;
      const u2=req.params.user2;
@@ -121,6 +124,24 @@ app.get('/with/:user1/:user2',(req,res)=>{
         .catch((err)=>console.log(err));
 
 })
+
+wss.on('connection', (ws) => {
+     ws.on('message', (message) => {
+       // Broadcast the message to all connected clients
+      // console.log(message)
+        data= Buffer.from(message); // Example: Buffer containing byte 0x76
+
+         message = data.toString('utf-8');
+         // console.log(message)
+       wss.clients.forEach((client) => {
+         if (client.readyState === WebSocket.OPEN) {
+           client.send(message);
+         }
+       });
+     });
+   });
+
+
 
 app.post('/home/mine',(req,res)=>{
      const user=req.body.user;
