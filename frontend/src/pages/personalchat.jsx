@@ -68,7 +68,7 @@ return(
 }
 */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
@@ -79,6 +79,7 @@ function Personalchat() {
   const [msgs, setMsgs] = useState([]);
   const [newmsg, setNewmsg] = useState("");
   const navigate = useNavigate();
+  const chatContainerRef = useRef(null);
   let socket;
 
   useEffect(() => {
@@ -98,15 +99,27 @@ function Personalchat() {
       //console.log(event.data)
       const message = JSON.parse(event.data);
       //console.log("message ", message)
-      setMsgs((prevMsgs) => [...prevMsgs, message]);
+      //setMsgs((prevMsgs) => [...prevMsgs, message]);
+      if ((message.user1 === userId && message.user2 === userId2) ||
+          (message.user1 === userId2 && message.user2 === userId)) {
+        setMsgs((prevMsgs) => [...prevMsgs, message]);
+        // Scroll to the bottom of the chat history
+        if (chatContainerRef.current) {
+          chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+        }
+      }
     };
 
     // Fetch chat history using HTTP request initially
     axios.get(`http://localhost:1290/with/${userId}/${userId2}`)
-      .then((response) => { setMsgs(response.data.results); })
+      .then((response) => { setMsgs(response.data.results); 
+        if (chatContainerRef.current) {
+          chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+        }
+      })
       .catch((err) => console.log(err));
+      
 
-  
     return () => {
       socket.close();
     };
@@ -134,7 +147,7 @@ function Personalchat() {
   return (
     <>
       <div className="chat-container">
-        <div className="chat-history">
+        <div ref={chatContainerRef}  className="chat-history">
           {
             (msgs.length > 0) ? (
               <div className="msg-list">
